@@ -8,6 +8,7 @@
 // GitHub下载方式
 require_once __DIR__ . '/../autoloader.php';
 use phpspider\core\phpspider;
+use phpspider\core\log;
 
 /* Do NOT delete this comment */
 /* 不要删除这段注释 */
@@ -16,28 +17,29 @@ $configs = array(
     'name' => '糗事百科',
     'log_show' => true,
     'tasknum' => 1,
+    'save_running_state'=>true,
     //'save_running_state' => true,
     'domains' => array(
         'qiushibaike.com',
         'www.qiushibaike.com'
     ),
     'scan_urls' => array(
-        'http://www.qiushibaike.com/'
+        'https://www.qiushibaike.com/'
     ),
     'list_url_regexes' => array(
-        "http://www.qiushibaike.com/8hr/page/\d+\?s=\d+"
+        "https://www.qiushibaike.com/8hr/page/\d+\?s=\d+"
     ),
     'content_url_regexes' => array(
-        "http://www.qiushibaike.com/article/\d+",
+        "https://www.qiushibaike.com/article/\d+",
     ),
     'max_try' => 5,
     //'proxies' => array(
         //'http://H784U84R444YABQD:57A8B0B743F9B4D2@proxy.abuyun.com:9010'
     //),
-    //'export' => array(
-        //'type' => 'csv',
-        //'file' => '../data/qiushibaike.csv',
-    //),
+    'export' => array(
+        'type' => 'csv',
+        'file' => '../data/qiushibaike.csv',
+    ),
     //'export' => array(
         //'type'  => 'sql',
         //'file'  => '../data/qiushibaike.sql',
@@ -110,16 +112,16 @@ $spider->on_handle_img = function($fieldname, $img)
     $url = $rs[1];
     $img = $url;
 
-    //$pathinfo = pathinfo($url);
-    //$fileext = $pathinfo['extension'];
-    //if (strtolower($fileext) == 'jpeg') 
-    //{
-        //$fileext = 'jpg';
-    //}
-    //// 以纳秒为单位生成随机数
-    //$filename = uniqid().".".$fileext;
-    //// 在data目录下生成图片
-    //$filepath = PATH_ROOT."/images/{$filename}";
+//     $pathinfo = pathinfo($url);
+//     $fileext = $pathinfo['extension'];
+//     if (strtolower($fileext) == 'jpeg') 
+//     {
+//         $fileext = 'jpg';
+//     }
+//     // 以纳秒为单位生成随机数
+//     $filename = uniqid().".".$fileext;
+//     // 在data目录下生成图片
+//     $filepath = PATH_ROOT."/images/{$filename}";
     //// 用系统自带的下载器wget下载
     //exec("wget -q {$url} -O {$filepath}");
 
@@ -127,6 +129,13 @@ $spider->on_handle_img = function($fieldname, $img)
     //$img = str_replace($url, $filename, $img);
     return $img;
 };
+
+function dlfile($file_url, $save_to)
+{
+    log::info("igm url:::::::::::::::::: ".$file_url);
+    $content = file_get_contents($file_url);
+    file_put_contents($save_to, $content);
+}
 
 $spider->on_extract_field = function($fieldname, $data, $page) 
 {

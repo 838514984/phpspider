@@ -3,6 +3,7 @@ require_once __DIR__ . '/../autoloader.php';
 use phpspider\core\phpspider;
 use phpspider\core\requests;
 use phpspider\core\db;
+use phpspider\core\log;
 
 /* Do NOT delete this comment */
 /* 不要删除这段注释 */
@@ -15,41 +16,54 @@ use phpspider\core\db;
 
 $configs = array(
     'name' => '13384美女图',
-    'tasknum' => 1,
+    'save_running_state'=>true,
+    'tasknum' => 8,
+    'queue_config' => array(
+    'host'      => '127.0.0.1',
+    'port'      => 6379,
+    'pass'      => '',
+    'db'        => 5,
+    'prefix'    => '13384',
+    'timeout'   => 30,
+    ),
     //'multiserver' => true,
-    'log_show' => true,
+    'log_show' => false,
     //'save_running_state' => false,
     'domains' => array(
-        'www.13384.com'
+        'm.13384.com'
     ),
     'scan_urls' => array(
-        "http://www.13384.com/qingchunmeinv/",
-        "http://www.13384.com/xingganmeinv/",
-        "http://www.13384.com/mingxingmeinv/",
-        "http://www.13384.com/siwameitui/",
-        "http://www.13384.com/meinvmote/",
-        "http://www.13384.com/weimeixiezhen/",
+        "http://m.13384.com/qingchunmeinv/",
+        "http://m.13384.com/xingganmeinv/",
+        "http://m.13384.com/mingxingmeinv/",
+        "http://m.13384.com/siwameitui/",
+        "http://m.13384.com/meinvmote/",
+        "http://m.13384.com/weimeixiezhen/",
     ),
     'list_url_regexes' => array(
-        "http://www.13384.com/qingchunmeinv/index_\d+.html",
-        "http://www.13384.com/xingganmeinv/index_\d+.html",
-        "http://www.13384.com/mingxingmeinv/index_\d+.html",
-        "http://www.13384.com/siwameitui/index_\d+.html",
-        "http://www.13384.com/meinvmote/index_\d+.html",
-        "http://www.13384.com/weimeixiezhen/index_\d+.html",
+        "http://m.13384.com/qingchunmeinv/index_\d+.html",
+        "http://m.13384.com/xingganmeinv/index_\d+.html",
+        "http://m.13384.com/mingxingmeinv/index_\d+.html",
+        "http://m.13384.com/siwameitui/index_\d+.html",
+        "http://m.13384.com/meinvmote/index_\d+.html",
+        "http://m.13384.com/weimeixiezhen/index_\d+.html",
     ),
     'content_url_regexes' => array(
-        "http://www.13384.com/qingchunmeinv/\d+.html",
-        "http://www.13384.com/xingganmeinv/\d+.html",
-        "http://www.13384.com/mingxingmeinv/\d+.html",
-        "http://www.13384.com/siwameitui/\d+.html",
-        "http://www.13384.com/meinvmote/\d+.html",
-        "http://www.13384.com/weimeixiezhen/\d+.html",
+        "http://m.13384.com/qingchunmeinv/\d+.html",
+        "http://m.13384.com/xingganmeinv/\d+.html",
+        "http://m.13384.com/mingxingmeinv/\d+.html",
+        "http://m.13384.com/siwameitui/\d+.html",
+        "http://m.13384.com/meinvmote/\d+.html",
+        "http://m.13384.com/weimeixiezhen/\d+.html",
     ),
     //'export' => array(
         //'type' => 'db', 
         //'table' => 'meinv_content',
     //),
+    'export' => array(
+        'type' => 'csv',
+        'file' => './data/13384.csv', // data目录下
+    ),
     'db_config' => array(
         'host'  => '127.0.0.1',
         'port'  => 3306,
@@ -65,11 +79,11 @@ $configs = array(
             'required' => true,
         ),
         // 分类
-        array(
-            'name' => "category",
-            'selector' => "//div[contains(@class,'crumbs')]//span//a",
-            'required' => true,
-        ),
+//         array(
+//             'name' => "category",
+//             'selector' => "//div[contains(@class,'crumbs')]//span//a",
+//             'required' => true,
+//         ),
         // 发布时间
         array(
             'name' => "addtime",
@@ -109,6 +123,14 @@ $configs = array(
                     'attached_url' => 'content_page_url',
                     'selector' => "//*[@id='big-pic']//a//img"
                 ),
+                array(
+                    'name' => 'page_content_test',
+                    // 发送 attached_url 请求获取其他的分页数据
+                    // attached_url 使用了上面抓取的 content_page_url
+                    'source_type' => 'attached_url',
+                    'attached_url' => 'page_content',
+                    'selector' => "//*[@id='big-pic']//a//img"
+                )
             ),
         ),
     ),
@@ -123,12 +145,13 @@ $spider->on_start = function($phpspider)
     //print_r($db_config);
     //exit;
     // 数据库连接
-    db::set_connect('default', $db_config);
-    db::init_mysql();
+    //db::set_connect('default', $db_config);
+    //db::init_mysql();
 };
 
 $spider->on_extract_field = function($fieldname, $data, $page) 
 {
+    log::info("------------------------------ filename: $fieldname: ".json_encode($data));
     if ($fieldname == 'url') 
     {
         $data = $page['request']['url'];
@@ -145,6 +168,8 @@ $spider->on_extract_field = function($fieldname, $data, $page)
     {
         $contents = $data;
         $array = array();
+        
+        
         foreach ($contents as $content) 
         {
             $url = $content['page_content'];
@@ -152,12 +177,12 @@ $spider->on_extract_field = function($fieldname, $data, $page)
             $array[md5($url)] = $url;
 
             //// 以纳秒为单位生成随机数
-            //$filename = uniqid().".jpg";
-            //// 在data目录下生成图片
-            //$filepath = PATH_ROOT."/images/{$filename}";
-            //// 用系统自带的下载器wget下载
-            //exec("wget -q {$url} -O {$filepath}");
-            //$array[] = $filename;
+            $filename = uniqid().".jpg";
+            // 在data目录下生成图片
+            $filepath = PATH_ROOT."/images/{$filename}";
+            // 用系统自带的下载器wget下载
+            exec("wget -q {$url} -O {$filepath}");
+            $array[] = $filename;
         }
         $data = implode(",", $array);
     }
